@@ -11,7 +11,7 @@ const Page = () => {
       price: 129.9,
       image: "/product1.png",
       description:
-        "Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quos. Lorem ipsum dolor sit amet consectetur adipisicing elit.",
+        "Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quos. Lorem ipsum dolor sit amet consectetur adipisicing elits.",
     },
     {
       id: 2,
