@@ -1,33 +1,42 @@
-import express from "express";
-import cors from "cors";
+import { Kafka } from "kafkajs";
 
-const app = express();
-
-app.use(
-  cors({
-    origin: "http://localhost:3001 ",
-  }),
-);
-
-app.use(express.json());
-
-app.post("/payment-service", async (req, res) => {
-  const { cart } = req.body;
-  // ASSUME THAT WE GET THE COOKIE AND DECRYPT THE USER ID
-  const userId = "123";
-
-  //TODO PAYMENT
-  console.log("Api endpoint hit!")
-
-  //KAFKA
-
-  return res.status(200).send("Payment successful")
+const kafka = new Kafka({
+  clientId: "order-service",
+  brokers: ["localhost:9094"],
 });
 
-app.use((err, req, res, next) => {
-  res.status(err.status || 500).send(err.message);
-});
+const producer = kafka.producer();
+const consumer = kafka.consumer({ groupId: "order-service" });
 
-app.listen(8000, () => {
-  console.log("Payment service is running on 8000");
-});
+const run = async () => {
+  try {
+    await producer.connect();
+    await consumer.connect();
+    await consumer.subscribe({
+      topic: "payment-successful",
+      fromBeginning: true,
+    });
+
+    await consumer.run({
+      eachMessage: async ({ topic, partition, message }) => {
+        const value = message.value.toString();
+        const { userId, cart } = JSON.parse(value);
+
+        // TODO: Create order on DB
+        const dummyOrderId = "123456789";
+        console.log(`Order consumer: Order created for user id: ${userId}`);
+
+        await producer.send({
+          topic: "order-successful",
+          messages: [
+            { value: JSON.stringify({ userId, orderId: dummyOrderId }) },
+          ],
+        });
+      },
+    });
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+run();
